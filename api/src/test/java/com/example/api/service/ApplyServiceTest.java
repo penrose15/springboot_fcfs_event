@@ -52,4 +52,56 @@ public class ApplyServiceTest {
         assertThat(count)
                 .isEqualTo(100L);
     }
+
+    @Test
+    public void kafka_여러명_응모() throws InterruptedException {
+        int threadCount = 1000;
+        ExecutorService executorService = Executors.newFixedThreadPool(32);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        for(int i = 0; i<threadCount; i++) {
+            long userId = i;
+            executorService.submit(() -> {
+                try {
+                    applyService.apply_kafka(userId);
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+        latch.await();
+
+        Thread.sleep(10000); // consumer 가 완전히 작동할 때까지 대기
+        // 배터리 없어서 테스트 못함 미래의 나야 화이팅
+
+        long count = couponRepository.count();
+        assertThat(count)
+                .isEqualTo(100L);
+    }
+
+    @Test
+    public void kafka_여러명_응모_한명당_한개만_발급() throws InterruptedException {
+        int threadCount = 1000;
+        ExecutorService executorService = Executors.newFixedThreadPool(32);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        for(int i = 0; i<threadCount; i++) {
+            long userId = i;
+            executorService.submit(() -> {
+                try {
+                    applyService.apply_kafka(1L);
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+        latch.await();
+
+        Thread.sleep(10000); // consumer 가 완전히 작동할 때까지 대기
+        // 배터리 없어서 테스트 못함 미래의 나야 화이팅
+
+        long count = couponRepository.count();
+        assertThat(count)
+                .isEqualTo(1L);
+    }
 }
